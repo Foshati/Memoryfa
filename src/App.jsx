@@ -1,4 +1,6 @@
+import { useEffect, useState } from "react";
 import "./App.css";
+import SingleCard from "./components/SingleCard";
 
 const cardImages = [
   { src: "/img/helmet-1.png", matched: false },
@@ -9,20 +11,87 @@ const cardImages = [
   { src: "/img/sword-1.png", matched: false },
 ];
 
-export default function App() {
+function App() {
+  const [cards, setCards] = useState([]);
+  const [turns, setTurns] = useState(0);
+  const [choiceOne, setChoiceOne] = useState(null);
+  const [choiceTwo, setChoiceTwo] = useState(null);
+  const [disabled, setDisabled] = useState(false);
+
   const shuffleCards = () => {
-    const shuffledCards = [...cardImages, ...cardImages];
-    console.log(shuffledCards);
+    const shuffledCards = [...cardImages, ...cardImages]
+      .sort(() => Math.random() - 0.5)
+      .map((card) => ({ ...card, id: Math.random() }));
+
+    setChoiceOne(null);
+    setChoiceTwo(null);
+    setCards(shuffledCards);
+    setTurns(0);
   };
+
+  // handle a choice
+  const handleChoice = (card) => {
+    choiceOne ? setChoiceTwo(card) : setChoiceOne(card);
+  };
+
+  // compare 2 Selected Cards
+  useEffect(() => {
+    if (choiceOne && choiceTwo) {
+      setDisabled(true);
+
+      if (choiceOne.src === choiceTwo.src) {
+        setCards((prevCards) => {
+          return prevCards.map((card) => {
+            if (card.src === choiceOne.src) {
+              return { ...card, matched: true };
+            } else {
+              return card;
+            }
+          });
+        });
+        resetTurn();
+      } else {
+        setTimeout(() => resetTurn(), 1000);
+      }
+    }
+  }, [choiceOne, choiceTwo]);
+
+  // reset choices and increase turn
+  const resetTurn = () => {
+    setChoiceOne(null);
+    setChoiceTwo(null);
+    setTurns((prevTurn) => prevTurn + 1);
+    setDisabled(false);
+  };
+
+  useEffect(() => {
+    shuffleCards();
+  }, []);
+
   return (
-    <div>
-      <h1 className="m-8 text-5xl font-bold text-yellow-200">Memoryfa</h1>
+    <div className="App">
+      <h1 className="m-4 text-4xl text-yellow-500 ">Memoryfa</h1>
       <button
-        className="px-2 py-4 m-4 rounded-2xl bg-slate-600"
+        className="p-4 m-4 text-black rounded-3xl bg-slate-400"
         onClick={shuffleCards}
       >
-        New game
+        New Game
       </button>
+
+      <div className="card-grid">
+        {cards.map((card) => (
+          <SingleCard
+            key={card.id}
+            card={card}
+            handleChoice={handleChoice}
+            flipped={card === choiceOne || card === choiceTwo || card.matched}
+            disabled={disabled}
+          />
+        ))}
+      </div>
+      <p>Turns: {turns}</p>
     </div>
   );
 }
+
+export default App;
